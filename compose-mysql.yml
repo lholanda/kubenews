@@ -1,0 +1,45 @@
+services:
+  # volume é por container - dados persistidos
+  mysqldb:
+    #container_name: lhdev_mysql_container
+    image: mysql:8.1
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+    ports:
+      - '3306:3306'
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql_docker_vol:/var/lib/mysql
+    networks:
+      - kubenews_net
+
+  # applicacao web   
+  kubenews:
+    image: lholanda/kube-news:v8.1
+    build: 
+      context: ./src
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
+    depends_on:
+      - mysqldb
+    environment:
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST : mysqldb  # nome do service 
+    networks:
+      - kubenews_net
+
+volumes:
+  mysql_docker_vol:
+    name: mysql_vol
+    external: true
+    
+
+networks:
+  kubenews_net:
+    driver: bridge

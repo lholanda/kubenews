@@ -1,0 +1,50 @@
+# projeto - 100% em container
+# docker com compose
+# app web acessando um bd postgres , persistindo no volume e comunicando 
+# via uma network tipo bride
+services:
+  # volume é por container - dados persistidos
+  # volume é por container - dados persistidos
+  postgre:
+    image: postgres:12.17
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE}
+    volumes:
+      # tipo bind mount
+      #- ./postgre_vol:/var/lib/postgresql/data
+      # tipo gerenciado pelo doker
+      - postgre_docker_vol:/var/lib/postgresql/data
+    networks:
+      - kubenews_net
+
+  # applicacao web
+  kubenews:
+    image: lholanda/kube-news:v8.3
+    build: 
+      context: ./src
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgre
+    environment:
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: postgre  # nome do service 
+    networks:
+      - kubenews_net
+
+volumes:
+  postgre_docker_vol:
+    name: postgre_vol
+    external: true
+
+networks:
+  kubenews_net:
+    driver: bridge
+
